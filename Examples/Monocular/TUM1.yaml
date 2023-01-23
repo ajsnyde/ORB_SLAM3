@@ -25,7 +25,7 @@ Camera.RGB: 1
 
 # Camera resolution
 Camera.width: 640
-Camera.height: 480
+Camera.height: 360
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
