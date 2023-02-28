@@ -39,10 +39,12 @@ int main(int argc, const char *argv[])
 {
 	if (argc < 2) {
 		cerr << endl
-				<< "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_video_file) (trajectory_file_name)"
+				<< "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_video_file) (trajectory_file_name) (frame_skip)"
 				<< endl;
 		return 1;
 	}
+
+	int frame_skip = atoi(argv[4]);
 
     string s;
 
@@ -59,7 +61,7 @@ int main(int argc, const char *argv[])
 		cout << "Cannot open the video file: " + videoFilePath << endl;
 		return -1;
 	}
-	double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+	double fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
 
 	cout << "Frame per seconds : " << fps << endl;
 
@@ -67,129 +69,31 @@ int main(int argc, const char *argv[])
 
 	cv::Mat frame;
 
-	for(double i = 0; i<999999; i++) {
+	for (int i = 0; true; i++) {
 		Mat Gray_frame;
 		bool bSuccess = cap.read(frame); // read a new frame from video
 
 		if (!bSuccess) {
-			cout << "Cannot read the frame from video file: " + videoFilePath<< endl;
+			cout << "Cannot read the frame from video file: " + videoFilePath
+					<< endl;
 			break;
 		}
 
 		//imshow("MyVideo", frame); //show the frame in "MyVideo" window
 		//imwrite("ig" + std::to_string(i) + ".jpg", frame);
 
-		// Pass the image to the SLAM system
-		SLAM.TrackMonocular(frame, i*(1/fps));
+		if (i % (frame_skip + 1) == 0) {
+			// Pass the image to the SLAM system
+			SLAM.TrackMonocular(frame, i * (1 / fps));
+		}
 
 		if (waitKey(30) == 27) //esc key
-		{
+				{
 			cout << "esc key is pressed by user" << endl;
 			break;
 		}
 	}
 
-//	const int num_seq = (argc - 3) / 2;
-//    cout << "num_seq = " << num_seq << endl;
-//    bool bFileName= (((argc-3) % 2) == 1);
-//    string file_name;
-//    if (bFileName)
-//    {
-//        file_name = string(argv[argc-1]);
-//        cout << "file name: " << file_name << endl;
-//    }
-//
-//    // Load all sequences:
-//    int seq;
-//    vector< vector<string> > vstrImageFilenames;
-//    vector< vector<double> > vTimestampsCam;
-//    vector<int> nImages;
-//
-//    vstrImageFilenames.resize(num_seq);
-//    vTimestampsCam.resize(num_seq);
-//    nImages.resize(num_seq);
-//
-//    int tot_images = 0;
-//    for (seq = 0; seq<num_seq; seq++)
-//    {
-//        cout << "Loading images for sequence " << seq << "...";
-//        LoadImages(string(argv[(2*seq)+3]) + "/mav0/cam0/data", string(argv[(2*seq)+4]), vstrImageFilenames[seq], vTimestampsCam[seq]);
-//        cout << "LOADED!" << endl;
-//
-//        nImages[seq] = vstrImageFilenames[seq].size();
-//        tot_images += nImages[seq];
-//    }
-
-//    // Vector for tracking time statistics
-//    vector<float> vTimesTrack;
-//    vTimesTrack.resize(tot_images);
-//
-//    cout << endl << "-------" << endl;
-//    cout.precision(17);
-
-//    for (seq = 0; seq<num_seq; seq++)
-//    {
-//
-//        // Main loop
-//        cv::Mat im;
-//        int proccIm = 0;
-//        for(int ni=0; ni<nImages[seq]; ni++, proccIm++)
-//        {
-//
-//            // Read image from file
-//            im = cv::imread(vstrImageFilenames[seq][ni],cv::IMREAD_UNCHANGED);
-//            double tframe = vTimestampsCam[seq][ni];
-//
-//            if(im.empty())
-//            {
-//                cerr << endl << "Failed to load image at: "
-//                     <<  vstrImageFilenames[seq][ni] << endl;
-//                return 1;
-//            }
-//
-//    #ifdef COMPILEDWITHC11
-//            std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-//    #else
-//            std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
-//    #endif
-//
-//            // Pass the image to the SLAM system
-//            SLAM.TrackMonocular(im,tframe);
-//
-//    #ifdef COMPILEDWITHC11
-//            std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-//    #else
-//            std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
-//    #endif
-//
-//#ifdef REGISTER_TIMES
-//            double t_track = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(t2 - t1).count();
-//            SLAM.InsertTrackTime(t_track);
-//#endif
-//
-//            double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
-//
-//            vTimesTrack[ni]=ttrack;
-//
-//            // Wait to load the next frame
-//            double T=0;
-//            if(ni<nImages[seq]-1)
-//                T = vTimestampsCam[seq][ni+1]-tframe;
-//            else if(ni>0)
-//                T = tframe-vTimestampsCam[seq][ni-1];
-//
-//            if(ttrack<T)
-//                usleep((T-ttrack)*1e6);
-//        }
-//
-//        if(seq < num_seq - 1)
-//        {
-//            cout << "Changing the dataset" << endl;
-//
-//            SLAM.ChangeDataset();
-//        }
-//
-//    }
     // Stop all threads
     SLAM.Shutdown();
 
