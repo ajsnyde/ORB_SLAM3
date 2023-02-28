@@ -59,7 +59,7 @@ int main(int argc, const char *argv[])
 		cout << "Cannot open the video file: " + videoFilePath << endl;
 		return -1;
 	}
-	double fps = cap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+	double fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
 
 	cout << "Frame per seconds : " << fps << endl;
 
@@ -67,7 +67,7 @@ int main(int argc, const char *argv[])
 
 	cv::Mat frame;
 
-	for(double i = 0; i<999999; i++) {
+	for(double i = 0; true; i++) {
 		Mat Gray_frame;
 		bool bSuccess = cap.read(frame); // read a new frame from video
 
