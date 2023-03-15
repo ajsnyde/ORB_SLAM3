@@ -55,14 +55,14 @@ int main(int argc, const char *argv[])
 		cout << "Cannot open the video file: " + leftVideoFilePath << endl;
 		return -1;
 	}
-	double leftFps = leftCap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+	double leftFps = leftCap.get(CAP_PROP_FPS); //get the frames per seconds of the video
 
 	VideoCapture rightCap(rightVideoFilePath); // video
 	if (!rightCap.isOpened()) {
 		cout << "Cannot open the video file: " + rightVideoFilePath << endl;
 		return -1;
 	}
-	double rightFps = rightCap.get(CV_CAP_PROP_FPS); //get the frames per seconds of the video
+	double rightFps = rightCap.get(CAP_PROP_FPS); //get the frames per seconds of the video
 
 	cout << "Frame per seconds - Left: " << leftFps << " Right: " << rightFps << endl;
 

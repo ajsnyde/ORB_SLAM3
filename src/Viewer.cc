@@ -129,6 +129,15 @@ bool Viewer::ParseViewerParamFile(cv::FileStorage &fSettings)
 
 void Viewer::Run()
 {
+//	cv::VideoWriter outputVideo;
+//	cv::Size videoSize = cv::Size(1024,768);
+//	int codec = cv::VideoWriter::fourcc('M', 'J', 'P', 'G');
+//	outputVideo.open("./viewer.avi", codec, 60, videoSize, true);
+//
+//    if (!outputVideo.isOpened()) {
+//        cerr << "Could not open the output video file for write\n";
+//    }
+
     mbFinished = false;
     mbStopped = false;
 
@@ -270,6 +279,7 @@ void Viewer::Run()
             toShow = im;
         }
 
+        //outputVideo.write(toShow);
         cv::imshow("ORB-SLAM3: Current Frame",toShow);
         cv::waitKey(mT);
 

@@ -20,6 +20,8 @@
 #include "Map.h"
 
 #include<mutex>
+#include <iostream>
+#include <fstream>
 
 namespace ORB_SLAM3
 {
@@ -40,6 +42,8 @@ Map::Map(int initKFid):mnInitKFid(initKFid), mnMaxKFid(initKFid),mnLastLoopKFid(
     mnId=nNextId++;
     mThumbnail = static_cast<GLubyte*>(NULL);
 }
+
+static int mapPointsTrackNum = 0;
 
 Map::~Map()
 {
@@ -211,6 +215,7 @@ void Map::SetStoredMap()
     mIsInUse = false;
 }
 
+
 void Map::clear()
 {
 //    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
@@ -222,6 +227,8 @@ void Map::clear()
         pKF->UpdateMap(static_cast<Map*>(NULL));
 //        delete *sit;
     }
+
+    mapPointsTrackNum++;
 
     mspMapPoints.clear();
     mspKeyFrames.clear();

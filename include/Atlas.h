@@ -52,8 +52,8 @@ public:
     ~Atlas();
 
     void CreateNewMap();
+    void WriteMapPoints();
     void ChangeMap(Map* pMap);
-
     unsigned long int GetLastInitKFid();
 
     void SetViewer(Viewer* pViewer);

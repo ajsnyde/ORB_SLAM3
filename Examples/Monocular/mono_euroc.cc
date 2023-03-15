@@ -37,6 +37,9 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
 
 int main(int argc, const char *argv[])
 {
+
+	printf("OpenCV: %s", cv::getBuildInformation().c_str());
+
 	if (argc < 2) {
 		cerr << endl
 				<< "Usage: ./mono_euroc path_to_vocabulary path_to_settings path_to_video_file) (trajectory_file_name) (frame_skip)"
@@ -44,13 +47,9 @@ int main(int argc, const char *argv[])
 		return 1;
 	}
 
-	int frame_skip = atoi(argv[4]);
+	int frame_skip = atoi(argv[5]);
 
     string s;
-
-
-
-
 
 	// Create SLAM system. It initializes all system threads and gets ready to process frames.
 	ORB_SLAM3::System SLAM(argv[1], argv[2], ORB_SLAM3::System::MONOCULAR,
@@ -71,20 +70,31 @@ int main(int argc, const char *argv[])
 
 	for (int i = 0; true; i++) {
 		Mat Gray_frame;
-		bool bSuccess = cap.read(frame); // read a new frame from video
 
-		if (!bSuccess) {
-			cout << "Cannot read the frame from video file: " + videoFilePath
-					<< endl;
-			break;
-		}
 
 		//imshow("MyVideo", frame); //show the frame in "MyVideo" window
 		//imwrite("ig" + std::to_string(i) + ".jpg", frame);
 
-		if (i % (frame_skip + 1) == 0) {
-			// Pass the image to the SLAM system
+		if ((i+1) % (frame_skip + 1) == 0) {
+
+			Mat Gray_frame;
+			bool bSuccess = cap.read(frame); // read a new frame from video
+
+			if (!bSuccess) {
+				cout << "Cannot read the frame from video file: " + videoFilePath << endl;
+				SLAM.mpAtlas->WriteMapPoints();
+				break;
+			}
+
+
 			SLAM.TrackMonocular(frame, i * (1 / fps));
+
+		} else {
+			if (!cap.grab()) {
+				cout << "Cannot read the frame from video file: " + videoFilePath << endl;
+				SLAM.mpAtlas->WriteMapPoints();
+				break;
+			}
 		}
 
 		if (waitKey(30) == 27) //esc key
@@ -92,7 +102,15 @@ int main(int argc, const char *argv[])
 			cout << "esc key is pressed by user" << endl;
 			break;
 		}
+		if (waitKey(30) == 77)
+				{
+			cout << "'m' key is pressed by user, writing current map points" << endl;
+			SLAM.mpAtlas->WriteMapPoints();
+			break;
+		}
 	}
+
+
 
     // Stop all threads
     SLAM.Shutdown();

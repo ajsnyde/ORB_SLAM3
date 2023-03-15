@@ -30,24 +30,28 @@
 #include "ImuTypes.h"
 
 using namespace std;
+using namespace cv;
 
 void LoadImages(const string &strImagePath, const string &strPathTimes,
                 vector<string> &vstrImages, vector<double> &vTimeStamps);
 
-void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro);
+void LoadIMU(const string &strImuPath, vector<ORB_SLAM3::IMU::Point> &vImuMeas);
 
 double ttrack_tot = 0;
+
+double timeRelativeToStart = 0;
+const double* ptrTimeRelativeToStart = &timeRelativeToStart;
+double fps;
+const double* fpsPtr = &fps;
+
+int frame_skip;
+const int* frame_skipPtr = &frame_skip;
+
+
+
 int main(int argc, char *argv[])
 {
-
-    if(argc < 5)
-    {
-        cerr << endl << "Usage: ./mono_inertial_euroc path_to_vocabulary path_to_settings path_to_sequence_folder_1 path_to_times_file_1 (path_to_image_folder_2 path_to_times_file_2 ... path_to_image_folder_N path_to_times_file_N) " << endl;
-        return 1;
-    }
-
-
-
+	printf("OpenCV: %s", cv::getBuildInformation().c_str());
 
 	if (argc < 2) {
 		cerr << endl
@@ -61,8 +65,9 @@ int main(int argc, char *argv[])
 	string path_to_video = argv[3];
 	string path_to_imu = argv[4];
 	string path_to_trajectory_output = argv[5];
-	int frame_skip = atoi(argv[6]);
+	frame_skip = atoi(argv[6]);
 
+    cout << "Loaded args" << endl;
 	// Create SLAM system. It initializes all system threads and gets ready to process frames.
 	ORB_SLAM3::System SLAM(path_to_vocab, path_to_settings, ORB_SLAM3::System::IMU_MONOCULAR,
 			true);
@@ -70,6 +75,7 @@ int main(int argc, char *argv[])
 	vector< vector<double> > vTimestampsImu;
 
 	vector<ORB_SLAM3::IMU::Point> vImuMeas;
+	vector<ORB_SLAM3::IMU::Point> vImuMeasSlice;
 
     LoadIMU(path_to_imu, vImuMeas);
     cout << "Loaded IMU!" << endl;
@@ -82,7 +88,7 @@ int main(int argc, char *argv[])
 		cout << "Cannot open the video file: " + path_to_video << endl;
 		return -1;
 	}
-	double fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
+	fps = cap.get(cv::CAP_PROP_FPS); //get the frames per seconds of the video
 
 	cout << "Frame per seconds : " << fps << endl;
 
@@ -90,25 +96,42 @@ int main(int argc, char *argv[])
 
 	cv::Mat frame;
 
-	for (int i = 0; true; i++) {
-		Mat Gray_frame;
-		bool bSuccess = cap.read(frame); // read a new frame from video
 
-		if (!bSuccess) {
-			cout << "Cannot read the frame from video file: " + path_to_video
-					<< endl;
-			break;
-		}
-
+	for (int i = 1; true; i++) {
 		//imshow("MyVideo", frame); //show the frame in "MyVideo" window
 		//imwrite("ig" + std::to_string(i) + ".jpg", frame);
 
+		// if skip = 1, i=0,2,4,6
+		// if skip = 2, i=3,6,9
+
+		auto predicate = [](ORB_SLAM3::IMU::Point point)
+				{return (point.t/1e+9 <= *ptrTimeRelativeToStart && point.t/1e+9 >= (*ptrTimeRelativeToStart - ((1+*frame_skipPtr)/ *fpsPtr)));};
 
 
+		// Pass the image to the SLAM system
 
-		if (i % (frame_skip + 1) == 0) {
-			// Pass the image to the SLAM system
-			SLAM.TrackMonocular(frame, i * (1 / fps), vImuMeas[i]);
+		if ((i+1) % (frame_skip + 1) == 0) {
+			std::copy_if(vImuMeas.begin(), vImuMeas.end(), std::back_inserter(vImuMeasSlice), predicate);
+			cout << "vImuMeasSlice size: " << vImuMeasSlice.size() << endl;
+
+			Mat Gray_frame;
+			bool bSuccess = cap.read(frame); // read a new frame from video
+
+			if (!bSuccess) {
+				cout << "Cannot read the frame from video file: " + path_to_video << endl;
+				break;
+			}
+
+
+			SLAM.TrackMonocular(frame, timeRelativeToStart, vImuMeasSlice);
+
+			timeRelativeToStart = (i+1) * (1 / fps);
+			vImuMeasSlice.clear();
+		} else {
+			if (!cap.grab()) {
+				cout << "Cannot read the frame from video file: " + path_to_video << endl;
+				break;
+			}
 		}
 
 		if (waitKey(30) == 27) //esc key
@@ -194,7 +217,7 @@ int main(int argc, char *argv[])
 //    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_MONOCULAR, true);
 //
 //    int proccIm=0;
-//    for (seq = 0; seq<num_seq; seq++)
+//    for (seq = 0; seq<num_seq; seq++)vector<ORB_SLAM3::IMU::Point>
 //    {
 //        cv::Mat im;
 //        vector<ORB_SLAM3::IMU::Point> vImuMeas;
@@ -302,9 +325,9 @@ void LoadIMU(const string &strImuPath, vector<ORB_SLAM3::IMU::Point> &vImuMeas)
 {
     ifstream fImu;
     fImu.open(strImuPath.c_str());
-    vTimeStamps.reserve(5000);
-    vAcc.reserve(5000);
-    vGyro.reserve(5000);
+    vImuMeas.reserve(5000);
+
+    double startTime = -1;
 
     while(!fImu.eof())
     {
@@ -327,7 +350,14 @@ void LoadIMU(const string &strImuPath, vector<ORB_SLAM3::IMU::Point> &vImuMeas)
             item = s.substr(0, pos);
             data[6] = stod(item);
 
-            // acc.x,y,z , gyro.x,y,z , time
+            if(startTime == -1){
+            	startTime = data[0];
+            } else {
+            	data[0] -= startTime - .00001;
+            }
+
+
+            // acc.x,y,z , gyro.x,y,z , time (nanoseconds)
             vImuMeas.push_back(ORB_SLAM3::IMU::Point(data[4],data[5],data[6],
             		data[1],data[2],data[3],data[0]));
         }

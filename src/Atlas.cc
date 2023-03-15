@@ -23,6 +23,9 @@
 #include "Pinhole.h"
 #include "KannalaBrandt8.h"
 
+#include <iostream>
+#include <fstream>
+
 namespace ORB_SLAM3
 {
 
@@ -55,6 +58,25 @@ Atlas::~Atlas()
     }
 }
 
+void Atlas::WriteMapPoints(){
+    std::ofstream pointcloudCsv;
+    string csvFileName = "example" + std::to_string(mnLastInitKFidMap) + ".csv";
+    pointcloudCsv.open (csvFileName);
+    pointcloudCsv << "x,y,z\n";
+
+    cout << "Writing pointcloud to csv: " <<  csvFileName << "\n";
+
+    vector<MapPoint*> allMapPoints = mpCurrentMap->GetAllMapPoints();
+
+    for(vector<MapPoint*>::iterator it=allMapPoints.begin(); it!=allMapPoints.end(); it++)
+    {
+    	MapPoint* mapPoint = *it;
+    	pointcloudCsv << mapPoint->GetWorldPos2().val[0] << "," << mapPoint->GetWorldPos2().val[1] << "," << mapPoint->GetWorldPos2().val[2] << "\n";
+    }
+    pointcloudCsv.close();
+}
+
+
 void Atlas::CreateNewMap()
 {
     unique_lock<mutex> lock(mMutexAtlas);
@@ -65,6 +87,24 @@ void Atlas::CreateNewMap()
             mnLastInitKFidMap = mpCurrentMap->GetMaxKFid()+1; //The init KF is the next of current maximum
 
         mpCurrentMap->SetStoredMap();
+
+        std::ofstream pointcloudCsv;
+        string csvFileName = "example" + std::to_string(mnLastInitKFidMap) + ".csv";
+        pointcloudCsv.open (csvFileName);
+        pointcloudCsv << "x,y,z\n";
+
+        cout << "Writing pointcloud to csv: " <<  csvFileName << "\n";
+
+        vector<MapPoint*> allMapPoints = mpCurrentMap->GetAllMapPoints();
+
+        for(vector<MapPoint*>::iterator it=allMapPoints.begin(); it!=allMapPoints.end(); it++)
+        {
+        	MapPoint* mapPoint = *it;
+        	pointcloudCsv << mapPoint->GetWorldPos2().val[0] << "," << mapPoint->GetWorldPos2().val[1] << "," << mapPoint->GetWorldPos2().val[2] << "\n";
+        }
+        pointcloudCsv.close();
+
+
         cout << "Saved map with ID: " << mpCurrentMap->GetId() << endl;
 
         //if(mHasViewer)
@@ -197,7 +237,8 @@ void Atlas::clearAtlas()
 {
     unique_lock<mutex> lock(mMutexAtlas);
     /*for(std::set<Map*>::iterator it=mspMaps.begin(), send=mspMaps.end(); it!=send; it++)
-    {
+    {example605.csv
+
         (*it)->clear();
         delete *it;
     }*/
