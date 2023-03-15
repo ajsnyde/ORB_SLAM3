@@ -158,7 +158,6 @@ static bool runCalibration( vector<vector<Point2f> > imagePoints,
 
     objectPoints.resize(imagePoints.size(),objectPoints[0]);
 
-
     double rms = cv::fisheye::calibrate(objectPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags); //| CALIB_USE_LU | fisheye::CALIB_RECOMPUTE_EXTRINSIC | fisheye::CALIB_CHECK_COND | fisheye::CALIB_FIX_SKEW);
 
     //double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix, distCoeffs, rvecs, tvecs, flags | CALIB_USE_LU);
