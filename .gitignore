@@ -40,6 +40,9 @@ Thirdparty/g2o/lib/
 Vocabulary/ORBvoc.txt
 build/
 
+Thirdparty/
+evaluation/
+
 lib/
 
 cmake_modules/
@@ -47,3 +50,5 @@ cmake-build-debug/
 
 *.pyc
 *.osa
+
+*.txt
