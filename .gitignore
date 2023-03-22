@@ -40,8 +40,8 @@ Thirdparty/g2o/lib/
 Vocabulary/ORBvoc.txt
 build/
 
-Thirdparty/
-evaluation/
+Thirdparty/**
+evaluation/**
 
 lib/
 
