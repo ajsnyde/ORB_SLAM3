@@ -27,11 +27,14 @@
 namespace ORB_SLAM3
 {
 
+cv::VideoWriter out_capture;
+
 FrameDrawer::FrameDrawer(Atlas* pAtlas):both(false),mpAtlas(pAtlas)
 {
     mState=Tracking::SYSTEM_NOT_READY;
     mIm = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
     mImRight = cv::Mat(480,640,CV_8UC3, cv::Scalar(0,0,0));
+
 }
 
 cv::Mat FrameDrawer::DrawFrame(bool bOldFeatures)
@@ -296,6 +299,10 @@ cv::Mat FrameDrawer::DrawRightFrame()
 
 void FrameDrawer::DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText)
 {
+//	if(nState!=Tracking::NO_IMAGES_YET){
+//		out_capture = cv::VideoWriter("path/.../video.avi", cv::VideoWriter::fourcc('M','J','P','G'), 30, cv::Size(1989,1680));
+//	}
+
     stringstream s;
     if(nState==Tracking::NO_IMAGES_YET)
         s << " WAITING FOR IMAGES";

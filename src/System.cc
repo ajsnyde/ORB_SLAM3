@@ -38,6 +38,8 @@ namespace ORB_SLAM3
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
+string strSettingsFile;
+
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence, const string &strLoadingFile):
     mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
@@ -145,6 +147,18 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     // Fix verbosity
     Verbose::SetTh(Verbose::VERBOSITY_QUIET);
+
+}
+
+void System::ResetViewer(){
+    //Create Drawers. These are used by the Viewer
+    mpFrameDrawer = new FrameDrawer(mpAtlas);
+    //Initialize the Viewer thread and launch
+	mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
+	mptViewer = new thread(&Viewer::Run, mpViewer);
+	mpTracker->SetViewer(mpViewer);
+	mpLoopCloser->mpViewer = mpViewer;
+	mpViewer->both = mpFrameDrawer->both;
 
 }
 
@@ -583,7 +597,7 @@ void System::SaveTrajectoryEuRoC(const string &filename)
             cv::Mat Rwb = Tbw.rowRange(0,3).colRange(0,3).t();
             cv::Mat twb = -Rwb*Tbw.rowRange(0,3).col(3);
             vector<float> q = Converter::toQuaternion(Rwb);
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << endl;
         }
         else
         {
@@ -591,7 +605,7 @@ void System::SaveTrajectoryEuRoC(const string &filename)
             cv::Mat Rwc = Tcw.rowRange(0,3).colRange(0,3).t();
             cv::Mat twc = -Rwc*Tcw.rowRange(0,3).col(3);
             vector<float> q = Converter::toQuaternion(Rwc);
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc.at<float>(0) << " " << twc.at<float>(1) << " " << twc.at<float>(2)  << endl;
         }
 
     }
@@ -637,7 +651,7 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
             cv::Mat R = pKF->GetImuRotation().t();
             vector<float> q = Converter::toQuaternion(R);
             cv::Mat twb = pKF->GetImuPosition();
-            f << setprecision(6) << 1e9*pKF->mTimeStamp  << " " <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+            f <<  setprecision(9) << twb.at<float>(0) << " " << twb.at<float>(1) << " " << twb.at<float>(2) << endl;
 
         }
         else
@@ -645,7 +659,7 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
             cv::Mat R = pKF->GetRotation();
             vector<float> q = Converter::toQuaternion(R);
             cv::Mat t = pKF->GetCameraCenter();
-            f << setprecision(6) << 1e9*pKF->mTimeStamp << " " <<  setprecision(9) << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2) << " " << q[0] << " " << q[1] << " " << q[2] << " " << q[3] << endl;
+            f <<  setprecision(9) << t.at<float>(0) << " " << t.at<float>(1) << " " << t.at<float>(2) << endl;
         }
     }
     f.close();

@@ -1390,7 +1390,7 @@ void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
 
 void Tracking::PreintegrateIMU()
 {
-    //cout << "start preintegration" << endl;
+    cout << "start preintegration" << endl;
 
     if(!mCurrentFrame.mpPrevFrame)
     {
@@ -2175,7 +2175,7 @@ void Tracking::Track()
 
 void Tracking::StereoInitialization()
 {
-    if(mCurrentFrame.N>500)
+    if(mCurrentFrame.N>1000)
     {
         if (mSensor == System::IMU_STEREO)
         {
@@ -2187,7 +2187,8 @@ void Tracking::StereoInitialization()
 
             if (cv::norm(mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA)<0.5)
             {
-                cout << "not enough acceleration" << endl;
+
+                cout << "not enough acceleration: " << cv::norm(mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA) << endl;
                 return;
             }
 
